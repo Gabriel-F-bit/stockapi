@@ -30,6 +30,6 @@ router.patch('/produtos/:id', validarAtualizacaoProduto, controller.atualizar);
 router.delete('/produtos/:id', controller.deletar);
 
 // Esse router é importado e "plugado" no app principal, em index.js
-// (app.use('/api', produtosRoutes)) — é lá que o prefixo /api é somado
+// (app.use('/api/v1/stockapi', produtosRoutes)) — é lá que o prefixo /api é somado
 // na frente de cada rota definida aqui.
 export default router;

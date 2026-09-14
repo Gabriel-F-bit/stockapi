@@ -1,10 +1,13 @@
 // services/itensPedidoService.js
-// itens_pedido tem DUAS chaves estrangeiras (pedido_id, produto_id).
-// Cada linha representa "esse produto está nesse pedido, nessa
-// quantidade, a esse preço".
+// Camada de acesso a dados: é aqui que a query SQL de fato acontece (ver
+// services/produtosService.js para a explicação completa do padrão usado
+// em todo o projeto). itens_pedido tem DUAS chaves estrangeiras
+// (pedido_id, produto_id). Cada linha representa "esse produto está
+// nesse pedido, nessa quantidade, a esse preço".
 
 import pool from '../config/db.js';
 
+// Cria um item de pedido novo e devolve o id que o MySQL gerou pra ele.
 export async function criar(item) {
   const { pedido_id, produto_id, quantidade, preco_unitario } = item;
 
@@ -34,6 +37,9 @@ export async function listarTodos() {
   return linhas;
 }
 
+// Busca um item específico pelo id, com o nome do produto e os dados do
+// pedido incluídos. Se não existir, devolve undefined (é o controller que
+// decide transformar isso em um 404).
 export async function buscarPorId(id) {
   const [linhas] = await pool.query(
     `SELECT itens_pedido.id, itens_pedido.quantidade, itens_pedido.preco_unitario,
@@ -62,6 +68,8 @@ export async function atualizar(id, item) {
   return resultado.affectedRows;
 }
 
+// Remove um item de pedido. affectedRows diz quantas linhas foram
+// apagadas: 1 se existia, 0 se não existia.
 export async function deletar(id) {
   const [resultado] = await pool.query('DELETE FROM itens_pedido WHERE id = ?', [id]);
   return resultado.affectedRows;

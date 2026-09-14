@@ -21,7 +21,7 @@ app.use(express.json());  // permite ler JSON enviado no corpo (req.body)
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // Todas as rotas ficam debaixo do prefixo /api
-// (ex: POST /produtos definido em produtosRoutes.js vira POST /api/produtos)
+// (ex: POST /produtos definido em produtosRoutes.js vira POST /api/v1/stockapi/produtos)
 app.use('/api/v1/stockapi', produtosRoutes);
 app.use('/api/v1/stockapi', clientesRoutes);
 app.use('/api/v1/stockapi', pedidosRoutes);
