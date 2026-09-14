@@ -109,28 +109,34 @@ Se qualquer coisa der errado no meio do caminho (erro de banco, exceção não p
 
 ## 5. Endpoints
 
-Prefixo de todas as rotas: `/api`
+Prefixo de todas as rotas: `/api/v1/stockapi`
+
+Além disso, há uma rota fora do prefixo, só para checar se o servidor está no ar:
+
+| Método | Rota | Sucesso |
+|---|---|---|
+| GET | `/health` | 200 + `{ "status": "ok" }` |
 
 | Método | Rota | Corpo (JSON) | Sucesso | Erros possíveis |
 |---|---|---|---|---|
-| POST | `/api/produtos` | `{ "nome", "preco", "descricao"?, "quantidade_estoque"?, "categoria_id"? }` — nome e preco obrigatórios | 201 + produto criado | 400 (dados inválidos) |
-| GET | `/api/produtos` | — | 200 + lista, **com o nome da categoria via LEFT JOIN** | — |
-| GET | `/api/produtos/:id` | — | 200, idem | 404 (não existe) |
-| PATCH | `/api/produtos/:id` | Qualquer subconjunto dos campos acima — só o que vier é alterado | 200 + produto atualizado | 400 / 404 |
-| DELETE | `/api/produtos/:id` | — | 204 (sem corpo) | 404 (não existe) |
+| POST | `/api/v1/stockapi/produtos` | `{ "nome", "preco", "descricao"?, "quantidade_estoque"?, "categoria_id"? }` — nome e preco obrigatórios | 201 + produto criado | 400 (dados inválidos) |
+| GET | `/api/v1/stockapi/produtos` | — | 200 + lista, **com o nome da categoria via LEFT JOIN** | — |
+| GET | `/api/v1/stockapi/produtos/:id` | — | 200, idem | 404 (não existe) |
+| PATCH | `/api/v1/stockapi/produtos/:id` | Qualquer subconjunto dos campos acima — só o que vier é alterado | 200 + produto atualizado | 400 / 404 |
+| DELETE | `/api/v1/stockapi/produtos/:id` | — | 204 (sem corpo) | 404 (não existe) |
 | qualquer | rota que não existe | — | — | 404 (rota não encontrada) |
 
 Exemplo de teste no Postman:
 
 ```
-POST http://localhost:3000/api/produtos
+POST http://localhost:3000/api/v1/stockapi/produtos
 Content-Type: application/json
 
 { "nome": "Caderno", "preco": 15.9, "categoria_id": 1 }
 ```
 
 ```
-PATCH http://localhost:3000/api/produtos/1
+PATCH http://localhost:3000/api/v1/stockapi/produtos/1
 Content-Type: application/json
 
 { "preco": 18.9 }
@@ -144,21 +150,21 @@ Essas três tabelas usam o padrão de PUT (substituição completa) ensinado em 
 
 | Método | Rota | Corpo (JSON) | Sucesso | Erros possíveis |
 |---|---|---|---|---|
-| POST | `/api/clientes` | `{ "nome", "email"?, "telefone"? }` | 201 | 400 |
-| GET | `/api/clientes` | — | 200 + lista | — |
-| GET | `/api/clientes/:id` | — | 200 | 404 |
-| PUT | `/api/clientes/:id` | `{ "nome", "email"?, "telefone"? }` (substitui tudo) | 200 | 400 / 404 |
-| DELETE | `/api/clientes/:id` | — | 204 | 404 |
-| POST | `/api/pedidos` | `{ "cliente_id", "status"? }` — status padrão é `pendente` | 201 | 400 |
-| GET | `/api/pedidos` | — | 200 + lista, **com o nome do cliente via JOIN** | — |
-| GET | `/api/pedidos/:id` | — | 200, idem | 404 |
-| PUT | `/api/pedidos/:id` | `{ "status" }` — só o status é atualizável | 200 | 400 / 404 |
-| DELETE | `/api/pedidos/:id` | — | 204 | 404, ou 400 se houver `itens_pedido` vinculados |
-| POST | `/api/itens_pedido` | `{ "pedido_id", "produto_id", "quantidade", "preco_unitario" }` | 201 | 400 |
-| GET | `/api/itens_pedido` | — | 200 + lista, **com nome do produto e status do pedido (2 JOINs)** | — |
-| GET | `/api/itens_pedido/:id` | — | 200, idem | 404 |
-| PUT | `/api/itens_pedido/:id` | `{ "quantidade", "preco_unitario" }` | 200 | 400 / 404 |
-| DELETE | `/api/itens_pedido/:id` | — | 204 | 404 |
+| POST | `/api/v1/stockapi/clientes` | `{ "nome", "email"?, "telefone"? }` | 201 | 400 |
+| GET | `/api/v1/stockapi/clientes` | — | 200 + lista | — |
+| GET | `/api/v1/stockapi/clientes/:id` | — | 200 | 404 |
+| PUT | `/api/v1/stockapi/clientes/:id` | `{ "nome", "email"?, "telefone"? }` (substitui tudo) | 200 | 400 / 404 |
+| DELETE | `/api/v1/stockapi/clientes/:id` | — | 204 | 404 |
+| POST | `/api/v1/stockapi/pedidos` | `{ "cliente_id", "status"? }` — status padrão é `pendente` | 201 | 400 |
+| GET | `/api/v1/stockapi/pedidos` | — | 200 + lista, **com o nome do cliente via JOIN** | — |
+| GET | `/api/v1/stockapi/pedidos/:id` | — | 200, idem | 404 |
+| PUT | `/api/v1/stockapi/pedidos/:id` | `{ "status" }` — só o status é atualizável | 200 | 400 / 404 |
+| DELETE | `/api/v1/stockapi/pedidos/:id` | — | 204 | 404, ou 400 se houver `itens_pedido` vinculados |
+| POST | `/api/v1/stockapi/itens_pedido` | `{ "pedido_id", "produto_id", "quantidade", "preco_unitario" }` | 201 | 400 |
+| GET | `/api/v1/stockapi/itens_pedido` | — | 200 + lista, **com nome do produto e status do pedido (2 JOINs)** | — |
+| GET | `/api/v1/stockapi/itens_pedido/:id` | — | 200, idem | 404 |
+| PUT | `/api/v1/stockapi/itens_pedido/:id` | `{ "quantidade", "preco_unitario" }` | 200 | 400 / 404 |
+| DELETE | `/api/v1/stockapi/itens_pedido/:id` | — | 204 | 404 |
 
 ---
 
@@ -242,7 +248,10 @@ export async function atualizar(id, camposAtualizados) {
 `notFound` e `errorHandler` não têm arquivo próprio — são definidos direto no `index.js`, exatamente como em Back-end I. São só funções passadas para `app.use()`, registradas **por último** (a ordem importa):
 
 ```js
-app.use('/api', produtosRoutes);
+app.use('/api/v1/stockapi', produtosRoutes);
+app.use('/api/v1/stockapi', clientesRoutes);
+app.use('/api/v1/stockapi', pedidosRoutes);
+app.use('/api/v1/stockapi', itensPedidoRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ erro: `Rota ${req.method} ${req.originalUrl} não encontrada` });
