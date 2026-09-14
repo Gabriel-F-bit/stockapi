@@ -18,7 +18,7 @@ app.use(cors());          // permite que outras origens (ex: um front-end) chame
 app.use(express.json());  // permite ler JSON enviado no corpo (req.body)
 
 // Rota simples só para confirmar que o servidor está no ar
-app.get('/', (req, res) => res.send('StockAPI no ar'));
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // Todas as rotas ficam debaixo do prefixo /api
 // (ex: POST /produtos definido em produtosRoutes.js vira POST /api/produtos)
