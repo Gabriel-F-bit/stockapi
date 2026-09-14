@@ -15,8 +15,8 @@ const pool = mysql.createPool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  waitForConnections: true, // opcional: se todas as conexões estiverem ocupadas, espera uma liberar
-  connectionLimit: 10,      // opcional: no máximo 10 conexões abertas ao mesmo tempo
+  waitForConnections: true, // se todas as conexões estiverem ocupadas, espera uma liberar
+  connectionLimit: 10,      // no máximo 10 conexões abertas ao mesmo tempo
 });
 
 // Exportamos o pool pronto — quem importar esse arquivo já recebe a conexão

@@ -7,6 +7,9 @@ import cors from 'cors';
 import 'dotenv/config'; // carrega o .env para dentro de process.env
 
 import produtosRoutes from './routes/produtosRoutes.js';
+import clientesRoutes from './routes/clientesRoutes.js';
+import pedidosRoutes from './routes/pedidosRoutes.js';
+import itensPedidoRoutes from './routes/itensPedidoRoutes.js';
 
 const app = express();
 
@@ -15,11 +18,14 @@ app.use(cors());          // permite que outras origens (ex: um front-end) chame
 app.use(express.json());  // permite ler JSON enviado no corpo (req.body)
 
 // Rota simples só para confirmar que o servidor está no ar
-app.get('/health', (req, res) => res.json({ status: 'OK', message: 'StockAPI no ar' }));
+app.get('/', (req, res) => res.send('StockAPI no ar'));
 
-// Todas as rotas de produtos ficam debaixo do prefixo /api
+// Todas as rotas ficam debaixo do prefixo /api
 // (ex: POST /produtos definido em produtosRoutes.js vira POST /api/produtos)
-app.use('/api/v1/stockapi', produtosRoutes);
+app.use('/api', produtosRoutes);
+app.use('/api', clientesRoutes);
+app.use('/api', pedidosRoutes);
+app.use('/api', itensPedidoRoutes);
 
 // --- A partir daqui, só entra quem NÃO encontrou uma rota válida acima ---
 // Isso não é um middleware separado nem vem de outro arquivo: é só uma
@@ -41,9 +47,17 @@ app.use((erro, req, res, next) => {
   console.error(erro); // sempre bom logar o erro real no terminal, pra debugar
 
   // Exemplo de erro específico que vale tratar com uma mensagem melhor:
-  // tentar salvar um produto com uma categoria_id que não existe no banco.
+  // tentar salvar um produto com uma categoria_id que não existe no banco
+  // (ou um pedido_id/produto_id inválido em itens_pedido).
   if (erro.code === 'ER_NO_REFERENCED_ROW_2') {
-    return res.status(400).json({ erro: 'categoria_id informado não existe' });
+    return res.status(400).json({ erro: 'referência inválida — o registro relacionado não existe' });
+  }
+
+  // O oposto do erro acima: tentar deletar um registro que ainda é
+  // referenciado por outra tabela (ex: um pedido que tem itens_pedido
+  // vinculados). O banco recusa a operação para não deixar dados órfãos.
+  if (erro.code === 'ER_ROW_IS_REFERENCED_2') {
+    return res.status(400).json({ erro: 'não é possível remover — existem registros vinculados a este' });
   }
 
   // Qualquer outro erro que não previmos: resposta genérica, sem vazar

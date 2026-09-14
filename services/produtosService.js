@@ -29,16 +29,34 @@ export async function criar(produto) {
   return resultado.insertId;
 }
 
-// Retorna todos os produtos cadastrados.
+// Retorna todos os produtos cadastrados, com o nome da categoria (via
+// LEFT JOIN, não INNER JOIN). Por quê LEFT: categoria_id é opcional no
+// schema (aceita NULL) — um INNER JOIN faria produtos sem categoria
+// desaparecerem silenciosamente do resultado. Com LEFT JOIN, eles
+// continuam aparecendo, só que com categoria: null.
 export async function listarTodos() {
-  const [linhas] = await pool.query('SELECT * FROM produtos');
+  const [linhas] = await pool.query(
+    `SELECT produtos.id, produtos.nome, produtos.descricao, produtos.preco,
+            produtos.quantidade_estoque, categorias.nome AS categoria
+     FROM produtos
+     LEFT JOIN categorias
+       ON produtos.categoria_id = categorias.id`
+  );
   return linhas;
 }
 
 // Busca um produto específico pelo id. Se não existir, devolve undefined
 // (é o controller que decide transformar isso em um 404).
 export async function buscarPorId(id) {
-  const [linhas] = await pool.query('SELECT * FROM produtos WHERE id = ?', [id]);
+  const [linhas] = await pool.query(
+    `SELECT produtos.id, produtos.nome, produtos.descricao, produtos.preco,
+            produtos.quantidade_estoque, categorias.nome AS categoria
+     FROM produtos
+     LEFT JOIN categorias
+       ON produtos.categoria_id = categorias.id
+     WHERE produtos.id = ?`,
+    [id]
+  );
   return linhas[0];
 }
 
@@ -53,11 +71,14 @@ export async function atualizar(id, camposAtualizados) {
   //    seguro usar o nome do campo dentro da string da query mais abaixo —
   //    nunca inserimos um nome de coluna que não esteja nessa lista fixa,
   //    então não existe brecha para o cliente injetar SQL pelo nome do campo.
-  const camposParaAtualizar = Object.keys(camposAtualizados).filter((campo) => CAMPOS_PRODUTO.includes(campo));
+  const camposParaAtualizar = Object.keys(camposAtualizados)
+    .filter((campo) => CAMPOS_PRODUTO.includes(campo));
 
   // 2) Monta "nome = ?, preco = ?" dinamicamente, um pedaço pra cada campo
   //    que sobrou depois do filtro.
-  const setClause = camposParaAtualizar.map((campo) => `${campo} = ?`).join(', ');
+  const setClause = camposParaAtualizar
+    .map((campo) => `${campo} = ?`)
+    .join(', ');
 
   // 3) Os VALORES continuam indo por parâmetro (?), nunca concatenados —
   //    só o NOME da coluna (já filtrado pela whitelist) entra direto na
@@ -66,7 +87,7 @@ export async function atualizar(id, camposAtualizados) {
 
   const [resultado] = await pool.query(
     `UPDATE produtos SET ${setClause} WHERE id = ?`,
-    [...valores, id] // O ... espalha o array de valores e adiciona o id no final, na mesma ordem dos "?" da query
+    [...valores, id]
   );
 
   return resultado.affectedRows;

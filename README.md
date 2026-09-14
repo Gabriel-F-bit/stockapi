@@ -1,8 +1,4 @@
-# StockAPI — CRUD de Produtos
 
-Material de consulta da disciplina **Desenvolvimento Back-end II**. Este projeto é o exemplo de referência do Encontro 04: uma API REST completa para a tabela `produtos`, com validação, tratamento de erros e as boas práticas que vocês já viram em Back-end I.
-
-Use este projeto para consultar como cada peça funciona — não para copiar direto nas atividades. O objetivo é vocês aplicarem o mesmo raciocínio nas outras tabelas da StockAPI (categorias, clientes, pedidos, itens_pedido).
 
 ---
 
@@ -23,25 +19,37 @@ Use este projeto para consultar como cada peça funciona — não para copiar di
 ```
 stockapi/
 ├── config/
-│   └── db.js                    # conexão (pool) com o MySQL
+│   └── db.js                       # conexão (pool) com o MySQL
 ├── controllers/
-│   └── produtosController.js    # recebe a requisição, monta a resposta
+│   ├── produtosController.js
+│   ├── clientesController.js
+│   ├── pedidosController.js
+│   └── itensPedidoController.js
 ├── middlewares/
-│   └── validarProduto.js        # valida o corpo da requisição
+│   ├── validarProduto.js           # validarProduto + validarAtualizacaoProduto (PATCH)
+│   ├── validarCliente.js
+│   ├── validarPedido.js            # validarPedido + validarAtualizacaoPedido
+│   └── validarItemPedido.js        # validarItemPedido + validarAtualizacaoItemPedido
 ├── routes/
-│   └── produtosRoutes.js        # define as URLs e liga tudo
+│   ├── produtosRoutes.js
+│   ├── clientesRoutes.js
+│   ├── pedidosRoutes.js
+│   └── itensPedidoRoutes.js
 ├── services/
-│   └── produtosService.js       # conversa com o banco (SQL)
+│   ├── produtosService.js
+│   ├── clientesService.js
+│   ├── pedidosService.js           # listarTodos/buscarPorId usam JOIN com clientes
+│   └── itensPedidoService.js
 ├── database/
-│   └── schema.sql               # cria o banco e as 6 tabelas
-├── .env.example                 # modelo de variáveis de ambiente
+│   └── schema.sql                  # cria o banco e as 6 tabelas
+├── .env.example                    # modelo de variáveis de ambiente
 ├── .gitignore
-├── index.js                     # ponto de entrada — servidor, rotas, 404 e erro central
+├── index.js                        # ponto de entrada — servidor, rotas, 404 e erro central
 ├── package.json
 └── README.md
 ```
 
-`notFound` e `errorHandler` são definidos direto no `index.js`, do mesmo jeito que vocês já fizeram em Back-end I. Só a validação (`validarProduto`) fica em um arquivo próprio dentro de `middlewares/`, porque ela é reaproveitável entre rotas diferentes (POST e PATCH).
+`notFound` e `errorHandler` **não são arquivos separados** — são definidos direto no `index.js`, do mesmo jeito que vocês já fizeram em Back-end I. Cada tabela tem sua própria validação em `middlewares/`, porque ela é reaproveitável entre rotas diferentes (POST e PUT/PATCH).
 
 Cada pasta tem uma única responsabilidade — é assim que o projeto se mantém organizado conforme cresce:
 
@@ -106,8 +114,8 @@ Prefixo de todas as rotas: `/api`
 | Método | Rota | Corpo (JSON) | Sucesso | Erros possíveis |
 |---|---|---|---|---|
 | POST | `/api/produtos` | `{ "nome", "preco", "descricao"?, "quantidade_estoque"?, "categoria_id"? }` — nome e preco obrigatórios | 201 + produto criado | 400 (dados inválidos) |
-| GET | `/api/produtos` | — | 200 + lista de produtos | — |
-| GET | `/api/produtos/:id` | — | 200 + produto | 404 (não existe) |
+| GET | `/api/produtos` | — | 200 + lista, **com o nome da categoria via LEFT JOIN** | — |
+| GET | `/api/produtos/:id` | — | 200, idem | 404 (não existe) |
 | PATCH | `/api/produtos/:id` | Qualquer subconjunto dos campos acima — só o que vier é alterado | 200 + produto atualizado | 400 / 404 |
 | DELETE | `/api/produtos/:id` | — | 204 (sem corpo) | 404 (não existe) |
 | qualquer | rota que não existe | — | — | 404 (rota não encontrada) |
@@ -129,6 +137,28 @@ Content-Type: application/json
 ```
 
 O segundo exemplo altera **só** o preço — `nome`, `descricao`, `quantidade_estoque` e `categoria_id` continuam exatamente como estavam.
+
+### clientes, pedidos e itens_pedido — PUT simples
+
+Essas três tabelas usam o padrão de PUT (substituição completa) ensinado em aula, não o PATCH parcial de `produtos`:
+
+| Método | Rota | Corpo (JSON) | Sucesso | Erros possíveis |
+|---|---|---|---|---|
+| POST | `/api/clientes` | `{ "nome", "email"?, "telefone"? }` | 201 | 400 |
+| GET | `/api/clientes` | — | 200 + lista | — |
+| GET | `/api/clientes/:id` | — | 200 | 404 |
+| PUT | `/api/clientes/:id` | `{ "nome", "email"?, "telefone"? }` (substitui tudo) | 200 | 400 / 404 |
+| DELETE | `/api/clientes/:id` | — | 204 | 404 |
+| POST | `/api/pedidos` | `{ "cliente_id", "status"? }` — status padrão é `pendente` | 201 | 400 |
+| GET | `/api/pedidos` | — | 200 + lista, **com o nome do cliente via JOIN** | — |
+| GET | `/api/pedidos/:id` | — | 200, idem | 404 |
+| PUT | `/api/pedidos/:id` | `{ "status" }` — só o status é atualizável | 200 | 400 / 404 |
+| DELETE | `/api/pedidos/:id` | — | 204 | 404, ou 400 se houver `itens_pedido` vinculados |
+| POST | `/api/itens_pedido` | `{ "pedido_id", "produto_id", "quantidade", "preco_unitario" }` | 201 | 400 |
+| GET | `/api/itens_pedido` | — | 200 + lista, **com nome do produto e status do pedido (2 JOINs)** | — |
+| GET | `/api/itens_pedido/:id` | — | 200, idem | 404 |
+| PUT | `/api/itens_pedido/:id` | `{ "quantidade", "preco_unitario" }` | 200 | 400 / 404 |
+| DELETE | `/api/itens_pedido/:id` | — | 204 | 404 |
 
 ---
 
@@ -167,7 +197,7 @@ Se `erros` tiver algo, a requisição para ali — o controller nem é chamado. 
 
 ---
 
-## 7. PUT x PATCH — por que escolhemos PATCH
+## 7. PUT x PATCH — por que produtos usa PATCH (e as outras, PUT)
 
 Os dois verbos HTTP existem para atualizar um recurso, mas com sentidos diferentes:
 
@@ -203,6 +233,8 @@ export async function atualizar(id, camposAtualizados) {
 
 **Isso é seguro contra SQL Injection?** Sim, e vale entender por quê: os *valores* continuam indo por parâmetro (`?`), igual em toda query deste projeto. A única coisa "nova" é que o *nome da coluna* entra direto na string (`${campo}`) — o que normalmente seria perigoso, mas aqui só acontece depois do `.filter()` contra `CAMPOS_PRODUTO`, uma lista fixa definida no código. Não importa o que o cliente mande no corpo da requisição: só um nome de coluna que já está nessa lista consegue chegar até a query. Se alguém mandar `{ "id": 999, "DROP TABLE produtos": true }`, esses campos são simplesmente descartados no `.filter()`.
 
+**Por que só produtos usa esse padrão?** Porque essa técnica (SQL dinâmico) é mais avançada do que o resto do conteúdo do curso. `clientes`, `pedidos` e `itens_pedido` usam UPDATE fixo com PUT — o cliente sempre manda os campos completos, sem a complexidade de montar a query em tempo de execução. Nada impede de aplicar PATCH também nessas tabelas depois, seguindo o mesmo molde desta seção.
+
 ---
 
 ## 8. Tratamento de erros
@@ -219,10 +251,17 @@ app.use((req, res) => {
 app.use((erro, req, res, next) => {
   console.error(erro);
 
-  // Exemplo de erro específico tratado com mensagem melhor: categoria_id
-  // que não existe na tabela categorias.
+  // Exemplo de erro específico tratado com mensagem melhor: uma FK
+  // enviada não existe (categoria_id, cliente_id, pedido_id, produto_id...).
   if (erro.code === 'ER_NO_REFERENCED_ROW_2') {
-    return res.status(400).json({ erro: 'categoria_id informado não existe' });
+    return res.status(400).json({ erro: 'referência inválida — o registro relacionado não existe' });
+  }
+
+  // O oposto: tentar deletar um registro que ainda é referenciado por
+  // outra tabela (ex: um pedido que tem itens_pedido vinculados). O banco
+  // recusa a operação para não deixar dados órfãos.
+  if (erro.code === 'ER_ROW_IS_REFERENCED_2') {
+    return res.status(400).json({ erro: 'não é possível remover — existem registros vinculados a este' });
   }
 
   res.status(500).json({ erro: 'Erro interno do servidor' });
@@ -250,6 +289,8 @@ await service.atualizar(id, req.body);
 
 **Por quê:** se o UPDATE não muda nenhum valor (os dados enviados são idênticos aos já salvos), o MySQL retorna `affectedRows = 0` mesmo com o registro existindo. Se o 404 dependesse só disso, um UPDATE "sem mudanças" pareceria um erro. No `deletar`, esse problema não existe — um DELETE sempre afeta 0 ou 1 linha, sem ambiguidade.
 
+O mesmo cuidado foi replicado em `clientesController.js` e `itensPedidoController.js`. Em `pedidosController.js` também — o `atualizar` busca o pedido antes de chamar `atualizarStatus`.
+
 ---
 
 ## 10. Status codes usados
@@ -272,18 +313,30 @@ await service.atualizar(id, req.body);
 | `ECONNREFUSED` | MySQL não está rodando, ou host/porta errados no `.env` |
 | `ER_ACCESS_DENIED_ERROR` | Usuário ou senha incorretos no `.env` |
 | `ER_BAD_DB_ERROR` | O banco `stockapi` ainda não foi criado — rode `database/schema.sql` |
-| `ER_NO_REFERENCED_ROW_2` | `categoria_id` enviado não existe na tabela `categorias` |
+| `ER_NO_REFERENCED_ROW_2` | Uma FK enviada (categoria_id, cliente_id, pedido_id, produto_id) não existe |
+| `ER_ROW_IS_REFERENCED_2` | Tentativa de deletar um registro que ainda tem outro apontando para ele (ex: pedido com itens_pedido) |
 
 ---
 
-## 12. Aplicando esse padrão em outra tabela
+## 12. Comparando as 4 tabelas implementadas
 
-Para replicar esse CRUD em `categorias`, `clientes`, `pedidos` ou `itens_pedido`, sigam sempre a mesma ordem:
+Cada tabela tem uma particularidade — o objetivo de implementar as 4 é ver o mesmo padrão se ajustando a situações diferentes:
 
-1. `services/<entidade>Service.js` — as 5 funções (`criar`, `listarTodos`, `buscarPorId`, `atualizar`, `deletar`). No `atualizar`, sigam o mesmo padrão de UPDATE dinâmico da seção 7 se quiserem PATCH parcial — ou um UPDATE fixo, se preferirem manter PUT nessa tabela.
-2. `middlewares/validar<Entidade>.js` — normalmente duas funções: uma para criar (campos obrigatórios) e outra para atualizar (campos opcionais, validados só quando vierem)
+| Tabela | Chaves estrangeiras | JOIN na leitura? | Verbo de atualização | Particularidade |
+|---|---|---|---|---|
+| `produtos` | 1 (`categoria_id`, opcional) | LEFT JOIN com `categorias` | PATCH (parcial) | categoria_id aceita NULL — por isso LEFT, não INNER |
+| `clientes` | nenhuma | — | PUT (completo) | O CRUD mais simples do projeto |
+| `pedidos` | 1 (`cliente_id`) | INNER JOIN com `clientes` | PUT, só do `status` | `deletar` pode ser bloqueado por FK |
+| `itens_pedido` | 2 (`pedido_id`, `produto_id`) | INNER JOIN duplo (`produtos` + `pedidos`) | PUT, só de `quantidade`/`preco_unitario` | Tabela associativa — resolve o N:N entre pedidos e produtos |
+
+> **INNER JOIN x LEFT JOIN:** a regra prática é simples — se a FK pode ser `NULL` (como `produtos.categoria_id`), use `LEFT JOIN`, senão um registro "órfão" desaparece silenciosamente da lista. Se a FK é sempre obrigatória na prática (como `pedidos.cliente_id`, ou as duas FKs de `itens_pedido`, sempre exigidas pela validação), `INNER JOIN` é seguro e mais direto.
+
+Se for criar uma tabela nova a partir daqui, o roteiro de sempre continua valendo:
+
+1. `services/<entidade>Service.js` — as 5 funções (`criar`, `listarTodos`, `buscarPorId`, `atualizar`, `deletar`)
+2. `middlewares/validar<Entidade>.js` — validação de criação e, se fizer sentido, de atualização
 3. `controllers/<entidade>Controller.js` — sempre com `next(erro)` no catch, nunca `res.status(500)` direto
-4. `routes/<entidade>Routes.js` — aplique o middleware de validação certo em cada rota (`POST` com a validação "cheia", `PATCH`/`PUT` com a validação de atualização)
+4. `routes/<entidade>Routes.js` — aplique o middleware de validação certo em cada rota
 5. Registre a rota nova em `index.js`, **antes** dos dois `app.use` finais (404 e erro central)
 
 O 404 e o tratamento de erro central não precisam de nada novo — eles já cobrem qualquer rota adicionada, desde que continuem sendo os dois últimos `app.use` do arquivo.
