@@ -22,10 +22,10 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // Todas as rotas ficam debaixo do prefixo /api
 // (ex: POST /produtos definido em produtosRoutes.js vira POST /api/produtos)
-app.use('/api', produtosRoutes);
-app.use('/api', clientesRoutes);
-app.use('/api', pedidosRoutes);
-app.use('/api', itensPedidoRoutes);
+app.use('/api/v1/stockapi', produtosRoutes);
+app.use('/api/v1/stockapi', clientesRoutes);
+app.use('/api/v1/stockapi', pedidosRoutes);
+app.use('/api/v1/stockapi', itensPedidoRoutes);
 
 // --- A partir daqui, só entra quem NÃO encontrou uma rota válida acima ---
 // Isso não é um middleware separado nem vem de outro arquivo: é só uma
