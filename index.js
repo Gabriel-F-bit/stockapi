@@ -10,6 +10,7 @@ import produtosRoutes from './routes/produtosRoutes.js';
 import clientesRoutes from './routes/clientesRoutes.js';
 import pedidosRoutes from './routes/pedidosRoutes.js';
 import itensPedidoRoutes from './routes/itensPedidoRoutes.js';
+import categoriasRoutes from './routes/categoriasRoutes.js'
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // Todas as rotas ficam debaixo do prefixo /api
 // (ex: POST /produtos definido em produtosRoutes.js vira POST /api/v1/stockapi/produtos)
+app.use('/api/v1/atockapi', categoriasRoutes)
 app.use('/api/v1/stockapi', produtosRoutes);
 app.use('/api/v1/stockapi', clientesRoutes);
 app.use('/api/v1/stockapi', pedidosRoutes);
